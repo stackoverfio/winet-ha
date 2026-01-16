@@ -1,6 +1,8 @@
 # 🔥 WiNet Stove – Home Assistant Integration
 
-Integrazione Home Assistant per stufe a pellet **WiNet**  
+Integrazione non ufficiale, ancora in fase sperimentale, sviluppata e mantenuta dalla community.
+
+Integrazione Home Assistant per stufe a pellet equipaggiate con modulo wi-fi smart **WiNet**  
 Supporta **connessione Locale e Cloud**.
 
 ---
@@ -24,7 +26,7 @@ Supporta **connessione Locale e Cloud**.
 ## 🔧 Installazione (HACS)
 
 1. HACS → Integrazioni → **Custom repository**
-2. URL: https://github.com/TUOUSERNAME/winet-ha
+2. URL: https://github.com/stackoverfio/winet-ha
 3. Categoria: **Integration**
 4. Installa **WiNet Stove**
 5. Riavvia Home Assistant

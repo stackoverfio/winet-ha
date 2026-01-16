@@ -1,0 +1,23 @@
+{
+  "title": "WiNet Stove",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connection mode",
+        "description": "Choose how to connect to the WiNet stove."
+      },
+      "local": {
+        "title": "Local configuration",
+        "description": "Enter the IP address of the stove."
+      },
+      "cloud": {
+        "title": "Cloud configuration",
+        "description": "Enter the stove identifier (stove_id)."
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the stove.",
+      "unknown": "Unknown error."
+    }
+  }
+}

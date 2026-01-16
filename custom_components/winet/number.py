@@ -122,10 +122,10 @@ class WiNetSetAirTempNumber(_DebouncedNumberBase):
     _attr_mode = "slider"
     _attr_entity_category = EntityCategory.CONFIG
 
-    # ✅ range richiesto: 5..40 con step 0.5
-    _attr_native_min_value = 5.0
-    _attr_native_max_value = 40.0
-    _attr_native_step = 0.5
+    # ✅ range richiesto: 5..40 SOLO INTERI
+    _attr_native_min_value = 5
+    _attr_native_max_value = 40
+    _attr_native_step = 1
 
     def __init__(self, coordinator, entry_id: str, mode: str, api):
         super().__init__(coordinator, entry_id, mode, api)
@@ -133,22 +133,32 @@ class WiNetSetAirTempNumber(_DebouncedNumberBase):
 
     @property
     def native_value(self):
-        # coordinator.data["setAir"] ora è già in °C (float) grazie a _half()
+        """
+        Valore letto dalla stufa.
+        Può contenere .5 → lo mostriamo ARROTONDATO
+        per non far “impazzire” lo slider.
+        """
         val = self.coordinator.data.get("setAir")
         if val is None:
             return None
         try:
-            return float(val)
+            return int(round(float(val)))
         except (TypeError, ValueError):
             return None
 
     async def _send_value(self, value: float) -> None:
-        v = float(value)
-        if v < 5.0:
-            v = 5.0
-        if v > 40.0:
-            v = 40.0
+        """
+        In scrittura la stufa accetta SOLO interi.
+        """
+        v = int(round(float(value)))
+
+        if v < 5:
+            v = 5
+        if v > 40:
+            v = 40
+
         await self._api.set_air_temperature(v)
+
 
 
 class WiNetSetWaterTempNumber(_DebouncedNumberBase):
@@ -157,9 +167,10 @@ class WiNetSetWaterTempNumber(_DebouncedNumberBase):
     _attr_mode = "slider"
     _attr_entity_category = EntityCategory.CONFIG
 
-    _attr_native_min_value = 40.0
-    _attr_native_max_value = 80.0
-    _attr_native_step = 0.5
+    # ✅ range richiesto: 40..80 SOLO INTERI
+    _attr_native_min_value = 40
+    _attr_native_max_value = 80
+    _attr_native_step = 1
 
     def __init__(self, coordinator, entry_id: str, mode: str, api):
         super().__init__(coordinator, entry_id, mode, api)
@@ -167,18 +178,28 @@ class WiNetSetWaterTempNumber(_DebouncedNumberBase):
 
     @property
     def native_value(self):
+        """
+        Valore letto dalla stufa.
+        Può contenere .5 → lo arrotondiamo
+        per mantenere coerente lo slider.
+        """
         val = self.coordinator.data.get("setWater")
         if val is None:
             return None
         try:
-            return float(val)
+            return int(round(float(val)))
         except (TypeError, ValueError):
             return None
 
     async def _send_value(self, value: float) -> None:
-        v = float(value)
-        if v < 40.0:
-            v = 40.0
-        if v > 80.0:
-            v = 80.0
+        """
+        In scrittura la stufa accetta SOLO interi.
+        """
+        v = int(round(float(value)))
+
+        if v < 40:
+            v = 40
+        if v > 80:
+            v = 80
+
         await self._api.set_water_temperature(v)

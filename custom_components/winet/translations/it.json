@@ -1,0 +1,26 @@
+{
+  "title": "Stufa WiNet",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Modalità di connessione",
+        "description": "Scegli come collegarti alla stufa WiNet."
+      },
+      "local": {
+        "title": "Configurazione locale",
+        "description": "Inserisci l'indirizzo IP della stufa."
+      },
+      "cloud": {
+        "title": "Configurazione cloud",
+        "description": "Inserisci l'identificativo della stufa (stove_id)."
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi alla stufa.",
+      "unknown": "Errore sconosciuto."
+    },
+    "abort": {
+      "already_configured": "La stufa è già configurata."
+    }
+  }
+}

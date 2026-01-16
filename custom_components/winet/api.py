@@ -15,6 +15,20 @@ class WiNetApiError(Exception):
     """Generic WiNet API error."""
 
 
+def _half(v: Any) -> float | None:
+    """Convert raw temp (0.5°C units) to °C float.
+    Handles None / '---' / empty strings.
+    """
+    if v is None:
+        return None
+    if isinstance(v, str) and v.strip() in ("", "---"):
+        return None
+    try:
+        return float(v) / 2.0
+    except (TypeError, ValueError):
+        return None
+
+
 @dataclass
 class WiNetApi:
     hass: HomeAssistant
@@ -23,14 +37,19 @@ class WiNetApi:
     stove_id: str | None = None
 
     def _session(self) -> aiohttp.ClientSession:
+        # usa la sessione condivisa di Home Assistant (best practice)
         return async_get_clientsession(self.hass)
 
     async def _get_json(self, url: str) -> dict[str, Any]:
         try:
-            async with self._session().get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+            async with self._session().get(
+                url,
+                timeout=aiohttp.ClientTimeout(total=8),
+            ) as resp:
                 if resp.status != 200:
                     raise WiNetApiError(f"HTTP {resp.status} su {url}")
                 return await resp.json(content_type=None)
+
         except asyncio.TimeoutError as e:
             raise WiNetApiError("Timeout chiamando WiNet") from e
         except aiohttp.ClientError as e:
@@ -39,9 +58,13 @@ class WiNetApi:
     async def _call(self, url: str) -> None:
         # Nel YAML i comandi sono URL GET anche quando 'sembrano' comandi.
         try:
-            async with self._session().get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+            async with self._session().get(
+                url,
+                timeout=aiohttp.ClientTimeout(total=8),
+            ) as resp:
                 if resp.status != 200:
                     raise WiNetApiError(f"HTTP {resp.status} su {url}")
+
         except asyncio.TimeoutError as e:
             raise WiNetApiError("Timeout inviando comando WiNet") from e
         except aiohttp.ClientError as e:
@@ -60,20 +83,23 @@ class WiNetApi:
         if self.mode == MODE_LOCAL:
             url = f"http://{self.host}/api/global"
             data = await self._get_json(url)
+
             return {
                 "raw": data,
                 "status": data.get("status"),
                 "description": data.get("description"),
                 "power": data.get("power"),
+                # mezzi gradi -> °C
                 "air": _half(data.get("air")),
                 "setAir": _half(data.get("setAir")),
                 "water": _half(data.get("water")),
                 "setWater": _half(data.get("setWater")),
-
+                # altri valori (qui NON applichiamo conversioni)
                 "gasflue": data.get("gasflue"),
                 "rpmExtractor": data.get("rpmExtractor"),
             }
 
+        # CLOUD
         base = "https://ws.cloudwinet.it/WiNetStove.svc/json"
         stove_id = self.stove_id
 
@@ -108,7 +134,9 @@ class WiNetApi:
         # range deciso: 1..5
         if level < 1 or level > 5:
             raise WiNetApiError("Power fuori range (1–5)")
+
         self._require()
+
         if self.mode == MODE_LOCAL:
             await self._call(f"http://{self.host}/api/power/{level}")
         else:
@@ -117,13 +145,16 @@ class WiNetApi:
     async def set_air_temperature(self, temp_c: float) -> None:
         self._require()
         if self.mode == MODE_LOCAL:
+            # °C -> mezzi gradi (intero)
             raw = int(round(float(temp_c) * 2))
             await self._call(f"http://{self.host}/api/temperature/air/{raw}")
         else:
-            await self._call(f"https://ws.cloudwinet.it/WiNetStove.svc/json/SetTemperature/{self.stove_id};{float(temp_c)}")
+            await self._call(
+                f"https://ws.cloudwinet.it/WiNetStove.svc/json/SetTemperature/{self.stove_id};{float(temp_c)}"
+            )
 
     async def set_water_temperature(self, temp_c: float) -> None:
-        """Set water temperature (supported only on Local API as per provided YAML)."""
+        """Set water temperature (Local only)."""
         self._require()
         if self.mode == MODE_LOCAL:
             raw = int(round(float(temp_c) * 2))

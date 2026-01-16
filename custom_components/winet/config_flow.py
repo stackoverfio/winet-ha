@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -13,6 +14,8 @@ from .const import (
     CONF_HAS_WATER, DEFAULT_HAS_WATER,
 )
 from .api import WiNetApi, WiNetApiError
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class WiNetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -34,10 +37,15 @@ class WiNetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema = vol.Schema({
             vol.Required(CONF_MODE, default=MODE_LOCAL): vol.In([MODE_LOCAL, MODE_CLOUD]),
         })
-        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=schema,
+            errors=errors,
+        )
 
     async def async_step_local(self, user_input=None) -> FlowResult:
-        """Step 2 (Locale): chiede solo IP/Host + flag acqua + scan interval."""
+        """Step 2 (Locale): IP/Host + flag acqua + scan interval."""
         errors = {}
 
         if user_input is not None:
@@ -45,11 +53,22 @@ class WiNetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             has_water = user_input.get(CONF_HAS_WATER, DEFAULT_HAS_WATER)
             scan = user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
-            api = WiNetApi(hass=self.hass, mode=MODE_LOCAL, host=host)
+            api = WiNetApi(
+                hass=self.hass,
+                mode=MODE_LOCAL,
+                host=host,
+            )
+
             try:
                 await api.get_all()
+
             except WiNetApiError:
                 errors["base"] = "cannot_connect"
+
+            except Exception:
+                _LOGGER.exception("Unexpected error during WiNet local config flow")
+                errors["base"] = "unknown"
+
             else:
                 return self.async_create_entry(
                     title="WiNet Stove (Local)",
@@ -66,10 +85,15 @@ class WiNetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_HAS_WATER, default=DEFAULT_HAS_WATER): bool,
             vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.Coerce(int),
         })
-        return self.async_show_form(step_id="local", data_schema=schema, errors=errors)
+
+        return self.async_show_form(
+            step_id="local",
+            data_schema=schema,
+            errors=errors,
+        )
 
     async def async_step_cloud(self, user_input=None) -> FlowResult:
-        """Step 2 (Cloud): chiede solo stove_id + flag acqua + scan interval."""
+        """Step 2 (Cloud): stove_id + flag acqua + scan interval."""
         errors = {}
 
         if user_input is not None:
@@ -77,11 +101,22 @@ class WiNetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             has_water = user_input.get(CONF_HAS_WATER, DEFAULT_HAS_WATER)
             scan = user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
-            api = WiNetApi(hass=self.hass, mode=MODE_CLOUD, stove_id=stove_id)
+            api = WiNetApi(
+                hass=self.hass,
+                mode=MODE_CLOUD,
+                stove_id=stove_id,
+            )
+
             try:
                 await api.get_all()
+
             except WiNetApiError:
                 errors["base"] = "cannot_connect"
+
+            except Exception:
+                _LOGGER.exception("Unexpected error during WiNet cloud config flow")
+                errors["base"] = "unknown"
+
             else:
                 return self.async_create_entry(
                     title="WiNet Stove (Cloud)",
@@ -98,4 +133,9 @@ class WiNetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_HAS_WATER, default=DEFAULT_HAS_WATER): bool,
             vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.Coerce(int),
         })
-        return self.async_show_form(step_id="cloud", data_schema=schema, errors=errors)
+
+        return self.async_show_form(
+            step_id="cloud",
+            data_schema=schema,
+            errors=errors,
+        )

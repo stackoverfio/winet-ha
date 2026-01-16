@@ -85,11 +85,13 @@ class _DebouncedNumberBase(WiNetEntity, NumberEntity):
 
 class WiNetSetPowerNumber(_DebouncedNumberBase):
     _attr_name = "WiNet Set Power"
-    _attr_min_value = 1
-    _attr_max_value = 5
-    _attr_step = 1
     _attr_mode = "slider"
     _attr_entity_category = EntityCategory.CONFIG
+
+    # ✅ QUESTI SONO I NOMI GIUSTI PER HA
+    _attr_native_min_value = 1
+    _attr_native_max_value = 5
+    _attr_native_step = 1
 
     def __init__(self, coordinator, entry_id: str, mode: str, api):
         super().__init__(coordinator, entry_id, mode, api)
@@ -106,21 +108,24 @@ class WiNetSetPowerNumber(_DebouncedNumberBase):
             return None
 
     async def _send_value(self, value: float) -> None:
-        if value < 1:
-            value = 1
-        if value > 5:
-            value = 5
-        await self._api.set_power(int(value))
+        v = int(round(value))
+        if v < 1:
+            v = 1
+        if v > 5:
+            v = 5
+        await self._api.set_power(v)
 
 
 class WiNetSetAirTempNumber(_DebouncedNumberBase):
     _attr_name = "WiNet Set Air Temperature"
     _attr_native_unit_of_measurement = "°C"
-    _attr_min_value = 5
-    _attr_max_value = 40
-    _attr_step = 0.5
     _attr_mode = "slider"
     _attr_entity_category = EntityCategory.CONFIG
+
+    # ✅ range richiesto: 5..40 con step 0.5
+    _attr_native_min_value = 5.0
+    _attr_native_max_value = 40.0
+    _attr_native_step = 0.5
 
     def __init__(self, coordinator, entry_id: str, mode: str, api):
         super().__init__(coordinator, entry_id, mode, api)
@@ -128,6 +133,7 @@ class WiNetSetAirTempNumber(_DebouncedNumberBase):
 
     @property
     def native_value(self):
+        # coordinator.data["setAir"] ora è già in °C (float) grazie a _half()
         val = self.coordinator.data.get("setAir")
         if val is None:
             return None
@@ -137,21 +143,23 @@ class WiNetSetAirTempNumber(_DebouncedNumberBase):
             return None
 
     async def _send_value(self, value: float) -> None:
-        if value < 5:
-            value = 5
-        if value > 40:
-            value = 40
-        await self._api.set_air_temperature(value)
+        v = float(value)
+        if v < 5.0:
+            v = 5.0
+        if v > 40.0:
+            v = 40.0
+        await self._api.set_air_temperature(v)
 
 
 class WiNetSetWaterTempNumber(_DebouncedNumberBase):
     _attr_name = "WiNet Set Water Temperature"
     _attr_native_unit_of_measurement = "°C"
-    _attr_min_value = 40
-    _attr_max_value = 80
-    _attr_step = 0.5
     _attr_mode = "slider"
     _attr_entity_category = EntityCategory.CONFIG
+
+    _attr_native_min_value = 40.0
+    _attr_native_max_value = 80.0
+    _attr_native_step = 0.5
 
     def __init__(self, coordinator, entry_id: str, mode: str, api):
         super().__init__(coordinator, entry_id, mode, api)
@@ -163,13 +171,14 @@ class WiNetSetWaterTempNumber(_DebouncedNumberBase):
         if val is None:
             return None
         try:
-            return int(val)
+            return float(val)
         except (TypeError, ValueError):
             return None
 
     async def _send_value(self, value: float) -> None:
-        if value < 40:
-            value = 40
-        if value > 80:
-            value = 80
-        await self._api.set_water_temperature(value)
+        v = float(value)
+        if v < 40.0:
+            v = 40.0
+        if v > 80.0:
+            v = 80.0
+        await self._api.set_water_temperature(v)
